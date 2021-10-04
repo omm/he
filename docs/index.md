@@ -7,7 +7,7 @@ title: Home
 
 ![Logo](assets/img/harbour_logo.svg)
 
-**Harbour editor** - is a simple, free source code editor, written in Harbor, open source.
+**Harbour editor** - is a simple, free source code editor, written in Harbour, open source.
 
 ## Example
 
