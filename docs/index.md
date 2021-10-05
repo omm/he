@@ -13,9 +13,9 @@ title: Home
 
 | OS      | Supported          |
 |---------|--------------------|
-| Mac     | [x] |
-| Linux   | [x] |
-| Windows | [x] |
+| Mac     | - [x] |
+| Linux   | - [x] |
+| Windows | - [x] |
 
 ## Example
 
