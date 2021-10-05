@@ -53,9 +53,9 @@ PROCEDURE Main( cFileName )
       cFileName := "Untitled-1.prg"
    ENDIF
 
-   DO WHILE lContinue
+   aText := hb_ATokens( hb_MemoRead( "cFileName" ), .T. )
 
-      aText := hb_ATokens( hb_MemoRead( "cFileName" ), .T. )
+   DO WHILE lContinue
 
       IF nMaxRow != MaxRow() .OR. nMaxCol != MaxCol()
          nMaxRow := MaxRow()
@@ -98,7 +98,7 @@ PROCEDURE Main( cFileName )
 
       CASE K_LBUTTONDOWN                            /*   Mouse left button down */
 
-         IF nWRow + 1 <= Len( aText ) .AND. MRow() + 1 <= Len( aText ) // dodano .AND. MRow() + 1 <= Len( aText )
+         IF nWRow + 1 <= Len( aText ) .AND. MRow() + 1 <= Len( aText )
 
             nWRow := MRow()
             nWCol := MCol()
