@@ -1,8 +1,8 @@
 # Harbour Editor
 
-**Harbour editor** - is a simple, free source code editor, written in Harbour, open source.
+Is a simple, free source code editor, written in [Harbour](https://harbour.github.io/), open source.
 
-### Install
+## Install
 
 Clone an existing repository only fetching the 10 most recent commits on the default branch (useful to save time):
 
