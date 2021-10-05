@@ -11,11 +11,9 @@ title: Home
 
 ## Platforms
 
-| OS      | Supported          |
-|---------|--------------------|
-| Mac     | - [x] |
-| Linux   | - [x] |
-| Windows | - [x] |
+- [x] Mac
+- [x] Linux
+- [x] Windows
 
 ## Example
 
