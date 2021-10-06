@@ -21,14 +21,16 @@ STATIC nAddCol := 0
 
 PROCEDURE Main( cFileName )
 
+   LOCAL aText := {}
+   LOCAL nChoice
    LOCAL lContinue := .T.
    LOCAL nLeft := 0, nMaxRow := 0, nMaxCol := 0
    LOCAL nKey, nKeyStd
-   LOCAL aText
    LOCAL i, nLine
    LOCAL cString
    LOCAL cSubString
    LOCAL lToggleInsert := .F.
+   LOCAL lAutoSave := .T.
 
    Scroll()
 
@@ -51,9 +53,35 @@ PROCEDURE Main( cFileName )
 
    IF cFileName == NIL
       cFileName := "Untitled-1.prg"
-   ENDIF
+      AAdd( aText, "" )
+   ELSE
+      IF File( cFileName )
+         aText := hb_ATokens( hb_MemoRead( cFileName ), .T. )
+      ELSE
 
-   aText := hb_ATokens( hb_MemoRead( "cFileName" ), .T. )
+         nChoice := hb_Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + ;
+            "Do you want to create a new file?", { "Yes", "No", "Cancel" }, 0xf0 )
+
+         SWITCH nChoice
+         CASE 1
+            aText := hb_ATokens( hb_MemoRead( cFileName ), .T. )
+            EXIT
+
+         CASE 2
+            cFileName := "Untitled-1.prg"
+            AAdd( aText, "" )
+            EXIT
+
+         CASE 3
+            QUIT
+
+         OTHERWISE
+            QUIT
+
+         ENDSWITCH
+
+      ENDIF
+   ENDIF
 
    DO WHILE lContinue
 
@@ -67,6 +95,7 @@ PROCEDURE Main( cFileName )
 
       hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", 0x0 )
 
+      /* Write a value to the display */
       FOR i := 0 TO nMaxRow
 
          nLine := i + nAddRow + 1
@@ -340,6 +369,12 @@ PROCEDURE Main( cFileName )
 
             nWCol++
 
+         ENDIF
+
+         IF lAutoSave
+            cString := ""
+            AEval( aText, {| e | cString += e + hb_eol() } )
+            hb_MemoWrit( cFileName, cString )
          ENDIF
 
       ENDSWITCH

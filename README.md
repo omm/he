@@ -25,7 +25,9 @@ cd he
 hbmk2 he.hbp
 ```
 
-> This command provides the only command-line or programmatic way to directly and permanently set system environment values.
+Set up a "he" installation directory for your user account. The following commands will add environment variables to your file to configure the "he" installation path:
+
+----
 
 #### Linux
 
