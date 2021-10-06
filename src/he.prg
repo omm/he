@@ -30,7 +30,7 @@ PROCEDURE Main( cFileName )
    LOCAL cString
    LOCAL cSubString
    LOCAL lToggleInsert := .F.
-   LOCAL lAutoSave := .T.
+   LOCAL lAutoSaveFile := .T.
 
    Scroll()
 
@@ -55,12 +55,12 @@ PROCEDURE Main( cFileName )
       cFileName := "Untitled-1.prg"
       AAdd( aText, "" )
    ELSE
-      IF File( cFileName )
+      IF hb_vfExists( cFileName )
          aText := hb_ATokens( hb_MemoRead( cFileName ), .T. )
       ELSE
 
-         nChoice := hb_Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + ;
-            "Do you want to create a new file?", { "Yes", "No", "Cancel" }, 0xf0 )
+         nChoice := Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + ;
+            "Do you want to create a new file?", { "Yes", "No", "Cancel" }, "00/15" )
 
          SWITCH nChoice
          CASE 1
@@ -93,7 +93,7 @@ PROCEDURE Main( cFileName )
       Scroll()
       DispBegin()
 
-      hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", 0x0 )
+      hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", "00/00" )
 
       /* Write a value to the display */
       FOR i := 0 TO nMaxRow
@@ -101,10 +101,10 @@ PROCEDURE Main( cFileName )
          nLine := i + nAddRow + 1
 
          IF nLine <= Len( aText )
-            hb_DispOutAt( i, 0, PadR( aText[ nLine ], nMaxCol + 1 ), iif( i == nWRow, 0xf0, 0x7 ) )
+            hb_DispOutAt( i, 0, PadR( aText[ nLine ], nMaxCol + 1 ), iif( i == nWRow, "00/15", "07/00" ) )
          ELSE
             Scroll( i, 0, nMaxRow, nMaxCol )
-            hb_DispOutAt( i, 0, ">> EOF <<", 0x01 )
+            hb_DispOutAt( i, 0, ">> EOF <<", "01/00" )
             EXIT
          ENDIF
 
@@ -371,13 +371,13 @@ PROCEDURE Main( cFileName )
 
          ENDIF
 
-         IF lAutoSave
-            cString := ""
-            AEval( aText, {| e | cString += e + hb_eol() } )
-            hb_MemoWrit( cFileName, cString )
-         ENDIF
-
       ENDSWITCH
+
+      IF lAutoSaveFile
+         cString := ""
+         AEval( aText, {| e | cString += e + hb_eol() } )
+         hb_MemoWrit( cFileName, cString )
+      ENDIF
 
    ENDDO
 
