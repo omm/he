@@ -22,15 +22,25 @@ STATIC nAddCol := 0
 PROCEDURE Main( cFileName )
 
    LOCAL aText := {}
+
+   LOCAL i
    LOCAL nChoice
-   LOCAL lContinue := .T.
-   LOCAL nLeft := 0, nMaxRow := 0, nMaxCol := 0
-   LOCAL nKey, nKeyStd
-   LOCAL i, nLine
+   LOCAL nKey
+   LOCAL nKeyStd
+   LOCAL nLeft
+   LOCAL nLine
+   LOCAL nMaxCol := 0
+   LOCAL nMaxRow := 0
+   LOCAL nVLine := 1                                /* vertical line */
+
    LOCAL cString
    LOCAL cSubString
-   LOCAL lToggleInsert := .F.
-   LOCAL lAutoSaveFile := .T.
+
+   LOCAL lApp_continue := .T.
+   LOCAL lEditor_cursorStyle := .F.
+   LOCAL lEditor_lineNumbers := .T.
+   LOCAL lEditor_renderLineHighlight := .T.
+   LOCAL lFiles_autoSave := .F.
 
    Scroll()
 
@@ -48,19 +58,19 @@ PROCEDURE Main( cFileName )
    Set( _SET_OSCODEPAGE, hb_cdpOS() )
 
    hb_gtInfo( HB_GTI_RESIZEMODE, HB_GTI_RESIZEMODE_ROWS )
-   hb_gtInfo( HB_GTI_WINTITLE, "Harbour Editor" )
+   hb_gtInfo( HB_GTI_WINTITLE, "Harbour Editor - " + cFileName )
    hb_gtInfo( HB_GTI_ICONFILE, "docs/assets/img/harbour.icns" )
 
    IF cFileName == NIL
       cFileName := "Untitled-1.prg"
       AAdd( aText, "" )
    ELSE
-      IF hb_vfExists( cFileName )
+      IF File( cFileName )
          aText := hb_ATokens( hb_MemoRead( cFileName ), .T. )
       ELSE
 
-         nChoice := Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + ;
-            "Do you want to create a new file?", { "Yes", "No", "Cancel" }, "00/15" )
+         nChoice := hb_Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + ;
+            "Do you want to create a new file?", { "Yes", "No", "Cancel" }, 0xf0 )
 
          SWITCH nChoice
          CASE 1
@@ -83,7 +93,7 @@ PROCEDURE Main( cFileName )
       ENDIF
    ENDIF
 
-   DO WHILE lContinue
+   DO WHILE lApp_continue
 
       IF nMaxRow != MaxRow() .OR. nMaxCol != MaxCol()
          nMaxRow := MaxRow()
@@ -93,7 +103,7 @@ PROCEDURE Main( cFileName )
       Scroll()
       DispBegin()
 
-      hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", "00/00" )
+      hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", 0x0 )
 
       /* Write a value to the display */
       FOR i := 0 TO nMaxRow
@@ -101,10 +111,21 @@ PROCEDURE Main( cFileName )
          nLine := i + nAddRow + 1
 
          IF nLine <= Len( aText )
-            hb_DispOutAt( i, 0, PadR( aText[ nLine ], nMaxCol + 1 ), iif( i == nWRow, "00/15", "07/00" ) )
+
+            /* Find the longest string element */
+            nLeft := Len( hb_ntos( Len( aText ) ) )
+
+            /* Controls the display of line numbers. */
+            IF lEditor_lineNumbers
+               hb_DispOutAt(  i, 0, PadL( hb_ntos( nLine ), nLeft ), iif( i == nWRow, "15/00", "07/00" ) )
+            ENDIF
+
+            hb_DispOutAt( i, nLeft, "▕", "08/00")
+
+            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), if( lEditor_renderLineHighlight, iif( i == nWRow, "00/15", "07/00" ), NIL ) )
          ELSE
             Scroll( i, 0, nMaxRow, nMaxCol )
-            hb_DispOutAt( i, 0, ">> EOF <<", "01/00" )
+            hb_DispOutAt( i, 0, ">> EOF <<", 0x01 )
             EXIT
          ENDIF
 
@@ -112,7 +133,7 @@ PROCEDURE Main( cFileName )
 
       DispEnd()
 
-      SetPos( nWRow, nWCol )
+      SetPos( nWRow, nLeft + nVLine + nWCol )
 
       nKey := Inkey( 0 )
 
@@ -121,7 +142,7 @@ PROCEDURE Main( cFileName )
       SWITCH nKeyStd
 
       CASE K_ESC                                    /*   Esc, Ctrl-[ */
-         lContinue := .F.
+         lApp_continue := .F.
 
          EXIT
 
@@ -222,7 +243,7 @@ PROCEDURE Main( cFileName )
 
          IF nWRow <= 0
             IF nAddRow - nMaxRow  >= 0
-               nAddRow -= nMaxRow + 1
+               nAddRow -= nMaxRow
             ENDIF
          ENDIF
          nWRow := 0
@@ -232,14 +253,14 @@ PROCEDURE Main( cFileName )
       CASE K_PGDN                                   /*   PgDn, Ctrl-C */
 
          IF nWRow >= nMaxRow
-            IF nAddRow +  nMaxRow + 2 <= Len( aText )
-               nAddRow += nMaxRow + 2
+            IF nAddRow +  nMaxRow <= Len( aText )
+               nAddRow += nMaxRow
             ENDIF
          ENDIF
 
          nWRow := Min( nMaxRow, Len( aText ) - nAddRow - 1 )
 
-         Scroll( 0, nLeft, nMaxRow, nMaxCol )
+         Scroll( 0, 0, nMaxRow, nMaxCol )
 
          EXIT
 
@@ -276,12 +297,12 @@ PROCEDURE Main( cFileName )
 
       CASE K_INS                                    /*   Ins, Ctrl-V */
 
-         IF lToggleInsert
+         IF lEditor_cursorStyle
             SetCursor( SC_NORMAL )
-            lToggleInsert := .F.
+            lEditor_cursorStyle := .F.
          ELSE
             SetCursor( SC_INSERT )
-            lToggleInsert := .T.
+            lEditor_cursorStyle := .T.
          ENDIF
 
          EXIT
@@ -341,7 +362,7 @@ PROCEDURE Main( cFileName )
 
       CASE K_TAB                                    /*   Tab, Ctrl-I */
          cString := aText[ nAddRow + nWRow + 1 ]
-         aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lToggleInsert, 1, 0 ), "   " )
+         aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), "   " )
 
          nWCol += 3
 
@@ -365,19 +386,19 @@ PROCEDURE Main( cFileName )
 
             cString := aText[ nAddRow + nWRow + 1 ]
 
-            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lToggleInsert, 1, 0 ), AddChar( nKeyStd ) )
+            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), AddChar( nKeyStd ) )
 
             nWCol++
 
          ENDIF
 
-      ENDSWITCH
+         IF lFiles_autoSave
+            cString := ""
+            AEval( aText, {| e | cString += e + hb_eol() } )
+            hb_MemoWrit( cFileName, cString )
+         ENDIF
 
-      IF lAutoSaveFile
-         cString := ""
-         AEval( aText, {| e | cString += e + hb_eol() } )
-         hb_MemoWrit( cFileName, cString )
-      ENDIF
+      ENDSWITCH
 
    ENDDO
 
