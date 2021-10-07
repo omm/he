@@ -2,10 +2,10 @@
  *
  * he.prg
  *
- *  Simple program editor in Harbour.
+ * Simple program editor in Harbour.
  *
- *  Compile:    hbmk2 he.hbp
- *  Execute:    he <file>
+ * Compile:    hbmk2 he.hbp
+ * Execute:    he <file>
  *
  */
 
@@ -58,7 +58,6 @@ PROCEDURE Main( cFileName )
    Set( _SET_OSCODEPAGE, hb_cdpOS() )
 
    hb_gtInfo( HB_GTI_RESIZEMODE, HB_GTI_RESIZEMODE_ROWS )
-   hb_gtInfo( HB_GTI_WINTITLE, "Harbour Editor - " + cFileName )
    hb_gtInfo( HB_GTI_ICONFILE, "docs/assets/img/harbour.icns" )
 
    IF cFileName == NIL
@@ -92,6 +91,8 @@ PROCEDURE Main( cFileName )
 
       ENDIF
    ENDIF
+
+   hb_gtInfo( HB_GTI_WINTITLE, cFileName )
 
    DO WHILE lApp_continue
 
