@@ -44,3 +44,6 @@ source ~/.bashrc
 setx path "%path%;c:he/bin/win/mingw64"
 ```
 
+#### Hello World
+
+![Hello World](docs/assets/img/HelloWorld.png)
