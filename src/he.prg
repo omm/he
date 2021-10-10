@@ -14,10 +14,10 @@
 #include "inkey.ch"
 #include "setcurs.ch"
 
-STATIC nWRow   := 0                                 /* specifies the row, col visible in the window */
-STATIC nWCol   := 0
-STATIC nAddRow := 0
 STATIC nAddCol := 0
+STATIC nAddRow := 0
+STATIC nWCol   := 0
+STATIC nWRow   := 0                                 /* specifies the row, col visible in the window */
 
 PROCEDURE Main( cFileName )
 
@@ -26,7 +26,6 @@ PROCEDURE Main( cFileName )
    LOCAL i
    LOCAL nChoice
    LOCAL nKey
-   LOCAL nKeyStd
    LOCAL nLeft
    LOCAL nLine
    LOCAL nMaxCol := 0
@@ -68,8 +67,7 @@ PROCEDURE Main( cFileName )
          aText := hb_ATokens( hb_MemoRead( cFileName ), .T. )
       ELSE
 
-         nChoice := hb_Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + ;
-            "Do you want to create a new file?", { "Yes", "No", "Cancel" }, 0xf0 )
+         nChoice := hb_Alert( "Cannot find the file " + '"' + cFileName + '";' + ";" + "Do you want to create a new file?", { "Yes", "No", "Cancel" }, "00/15" )
 
          SWITCH nChoice
          CASE 1
@@ -102,10 +100,10 @@ PROCEDURE Main( cFileName )
       ENDIF
 
       Scroll()
+
+      hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", "00/00" )
+
       DispBegin()
-
-      hb_DispBox( 0, 0, nMaxRow, nMaxCol, "         ", 0x0 )
-
       /* Write a value to the display */
       FOR i := 0 TO nMaxRow
 
@@ -116,12 +114,12 @@ PROCEDURE Main( cFileName )
             /* Find the longest string element */
             nLeft := Len( hb_ntos( Len( aText ) ) )
 
-            /* Controls the display of line numbers. */
+            /* Controls the display of line numbers */
             IF lEditor_lineNumbers
                hb_DispOutAt(  i, 0, PadL( hb_ntos( nLine ), nLeft ), iif( i == nWRow, "15/00", "07/00" ) )
             ENDIF
 
-            hb_DispOutAt( i, nLeft, "▕", "08/00")
+            hb_DispOutAt( i, nLeft, "▕", "08/00" ) /* (U+2595) */
 
             hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), if( lEditor_renderLineHighlight, iif( i == nWRow, "00/15", "07/00" ), NIL ) )
          ELSE
@@ -136,23 +134,58 @@ PROCEDURE Main( cFileName )
 
       SetPos( nWRow, nLeft + nVLine + nWCol )
 
+      /* Extract a character from the keyboard buffer or a mouse event */
       nKey := Inkey( 0 )
 
-      nKeyStd := hb_keyStd( nKey )
+      /* Key Shift */
+      IF hb_gtInfo( HB_GTI_KBDSHIFTS ) == hb_bitOr( hb_gtInfo( HB_GTI_KBDSHIFTS ), HB_GTI_KBD_SHIFT )
+         SWITCH nKey
+         CASE K_UP
+            EXIT
+         CASE K_DOWN
+            EXIT
+         CASE K_LEFT
+            EXIT
+         CASE K_RIGHT
+            EXIT
+         CASE K_HOME
+            EXIT
+         CASE K_END
+            EXIT
+         CASE K_PGUP
+            EXIT
+         CASE K_PGDN
+            EXIT
+         ENDSWITCH
+         LOOP
+      ENDIF
 
-      SWITCH nKeyStd
+      /* Key Ctrl */
+      IF hb_gtInfo( HB_GTI_KBDSHIFTS ) == hb_bitOr( hb_gtInfo( HB_GTI_KBDSHIFTS ), HB_GTI_KBD_CTRL )
+         SWITCH nKey
+         CASE K_CTRL_C
+            EXIT
+         CASE K_CTRL_V
+            EXIT
+         CASE K_CTRL_X
+            EXIT
+         ENDSWITCH
+         LOOP
+      ENDIF
 
-      CASE K_ESC                                    /*   Esc, Ctrl-[ */
+      SWITCH nKey
+
+      CASE K_ESC
          lApp_continue := .F.
 
          EXIT
 
-      CASE K_LBUTTONDOWN                            /*   Mouse left button down */
+      CASE K_LBUTTONDOWN
 
          IF nWRow + 1 <= Len( aText ) .AND. MRow() + 1 <= Len( aText )
 
             nWRow := MRow()
-            nWCol := MCol()
+            nWCol := MCol() - nLeft - nVLine
 
             SetPosCol( aText )
 
@@ -164,7 +197,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_MWFORWARD                              /*   Mouse Wheel Forward */
+      CASE K_MWFORWARD
 
          IF nWRow > 0
             nWRow--
@@ -178,7 +211,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_MWBACKWARD                             /*   Mouse Wheel Backward */
+      CASE K_MWBACKWARD
 
          SetPosRow( aText, nMaxRow )
 
@@ -186,7 +219,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_UP                                     /*   Up arrow, Ctrl-E */
+      CASE K_UP
 
          IF nWRow > 0
             nWRow--
@@ -200,7 +233,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_LEFT                                   /*   Left arrow, Ctrl-S */
+      CASE K_LEFT
 
          IF nWCol > 0
             nWCol--
@@ -212,7 +245,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_DOWN                                   /*   Down arrow, Ctrl-X */
+      CASE K_DOWN
 
          SetPosRow( aText, nMaxRow )
 
@@ -220,7 +253,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_RIGHT                                  /*   Right arrow, Ctrl-D */
+      CASE K_RIGHT
 
          IF nWCol < Len( aText[ nAddRow + nWRow + 1 ] )
             nWCol++
@@ -228,19 +261,19 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_HOME                                   /*   Home, Ctrl-A */
+      CASE K_HOME
 
          nWCol := 0
 
          EXIT
 
-      CASE K_END                                    /*   End, Ctrl-F */
+      CASE K_END
 
          nWCol := Len( aText[ nAddRow + nWRow + 1 ] )
 
          EXIT
 
-      CASE K_PGUP                                   /*   PgUp, Ctrl-R */
+      CASE K_PGUP
 
          IF nWRow <= 0
             IF nAddRow - nMaxRow  >= 0
@@ -251,7 +284,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_PGDN                                   /*   PgDn, Ctrl-C */
+      CASE K_PGDN
 
          IF nWRow >= nMaxRow
             IF nAddRow +  nMaxRow <= Len( aText )
@@ -265,7 +298,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_ENTER                                  /*   Enter, Ctrl-M */
+      CASE K_ENTER
 
          IF aText[ nAddRow + nWRow + 1 ] == "" .AND. nWCol == 0
 
@@ -276,7 +309,7 @@ PROCEDURE Main( cFileName )
          ELSE
             IF nWCol == Len( aText[ nAddRow + nWRow + 1 ] )
                hb_AIns( aText, nAddRow + nWRow + 2, "", .T. )
-               nWRow++ //
+               nWRow++
                nWCol := 0
             ELSE
                cSubString := Right( aText[ nAddRow + nWRow + 1 ], Len( aText[ nAddRow + nWRow + 1 ] ) - nWCol )
@@ -296,7 +329,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_INS                                    /*   Ins, Ctrl-V */
+      CASE K_INS
 
          IF lEditor_cursorStyle
             SetCursor( SC_NORMAL )
@@ -308,7 +341,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_DEL                                    /*   Del, Ctrl-G */
+      CASE K_DEL
 
          IF aText[ nAddRow + nWRow + 1 ] == ""
             IF nWRow >= 0
@@ -328,7 +361,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_BS                                     /*   Backspace, Ctrl-H */
+      CASE K_BS
 
          IF aText[ nAddRow + nWRow + 1 ] == ""
             IF nWRow > 0
@@ -361,7 +394,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_TAB                                    /*   Tab, Ctrl-I */
+      CASE K_TAB
          cString := aText[ nAddRow + nWRow + 1 ]
          aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), "   " )
 
@@ -369,11 +402,11 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_F1                                     /*   F1, Ctrl-Backslash */
+      CASE K_F1
 
          EXIT
 
-      CASE K_SH_F10                                 /*   Shift-F10 */
+      CASE K_SH_F10
 
          EXIT
 
@@ -383,11 +416,11 @@ PROCEDURE Main( cFileName )
 
       OTHERWISE
 
-         IF ( nKeyStd >= 32 .AND. nKeyStd <= 126 ) .OR. ( nKeyStd >= 160 .AND. nKeyStd <= 255 ) .OR. ! hb_keyChar( nKeyStd ) == ""
+         IF ( nKey >= 32 .AND. nKey <= 126 ) .OR. ( nKey >= 160 .AND. nKey <= 255 ) .OR. ! hb_keyChar( nKey ) == ""
 
             cString := aText[ nAddRow + nWRow + 1 ]
 
-            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), AddChar( nKeyStd ) )
+            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), AddChar( nKey ) )
 
             nWCol++
 
@@ -429,33 +462,33 @@ STATIC PROCEDURE SetPosCol( aText )
 
    RETURN
 
-STATIC FUNCTION AddChar( nKeyStd )
+STATIC FUNCTION AddChar( nKey )
 
-   SWITCH nKeyStd
+   SWITCH nKey
    CASE 34 // "
-      nKeyStd := hb_keyChar( nKeyStd ) + hb_keyChar( 34 )
+      nKey := hb_keyChar( nKey ) + hb_keyChar( 34 )
       EXIT
 
    CASE 39 // '
-      nKeyStd := hb_keyChar( nKeyStd ) + hb_keyChar( 39 )
+      nKey := hb_keyChar( nKey ) + hb_keyChar( 39 )
       EXIT
 
    CASE 40 // (
-      nKeyStd := hb_keyChar( nKeyStd ) + hb_keyChar( 41 )
+      nKey := hb_keyChar( nKey ) + hb_keyChar( 41 )
       EXIT
 
    CASE 91 // [
-      nKeyStd := hb_keyChar( nKeyStd ) + hb_keyChar( 93 )
+      nKey := hb_keyChar( nKey ) + hb_keyChar( 93 )
       EXIT
 
    CASE 123 // {
-      nKeyStd := hb_keyChar( nKeyStd ) + hb_keyChar( 125 )
+      nKey := hb_keyChar( nKey ) + hb_keyChar( 125 )
       EXIT
 
    OTHERWISE
 
-      nKeyStd := hb_keyChar( nKeyStd )
+      nKey := hb_keyChar( nKey )
 
    ENDSWITCH
 
-   RETURN nKeyStd
+   RETURN nKey
