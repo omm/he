@@ -32,14 +32,15 @@ PROCEDURE Main( cFileName )
    LOCAL nMaxRow := 0
    LOCAL nVLine := 1                                /* vertical line */
 
+   LOCAL cClipboardAction
    LOCAL cString
    LOCAL cSubString
 
    LOCAL lApp_continue := .T.
-   LOCAL lEditor_cursorStyle := .F.
-   LOCAL lEditor_lineNumbers := .T.
-   LOCAL lEditor_renderLineHighlight := .T.
-   LOCAL lFiles_autoSave := .F.
+   LOCAL lAutoSave := .F.
+   LOCAL lCursorStyle := .F.
+   LOCAL lLineNumbers := .T.
+   LOCAL lRenderLineHighlight := .T.
 
    Scroll()
 
@@ -115,13 +116,13 @@ PROCEDURE Main( cFileName )
             nLeft := Len( hb_ntos( Len( aText ) ) )
 
             /* Controls the display of line numbers */
-            IF lEditor_lineNumbers
+            IF lLineNumbers
                hb_DispOutAt(  i, 0, PadL( hb_ntos( nLine ), nLeft ), iif( i == nWRow, "15/00", "07/00" ) )
             ENDIF
 
             hb_DispOutAt( i, nLeft, "▕", "08/00" ) /* (U+2595) */
 
-            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), if( lEditor_renderLineHighlight, iif( i == nWRow, "00/15", "07/00" ), NIL ) )
+            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), if( lRenderLineHighlight, iif( i == nWRow, "00/15", "07/00" ), NIL ) )
          ELSE
             Scroll( i, 0, nMaxRow, nMaxCol )
             hb_DispOutAt( i, 0, ">> EOF <<", 0x01 )
@@ -164,11 +165,33 @@ PROCEDURE Main( cFileName )
       IF hb_gtInfo( HB_GTI_KBDSHIFTS ) == hb_bitOr( hb_gtInfo( HB_GTI_KBDSHIFTS ), HB_GTI_KBD_CTRL )
          SWITCH nKey
          CASE K_CTRL_C
+
+            cClipboardAction := aText[ nAddRow + nWRow + 1 ]
+
             EXIT
+
          CASE K_CTRL_V
+
+            IF nWCol == Len( aText[ nAddRow + nWRow + 1 ] )
+               hb_AIns( aText, nAddRow + nWRow + 2, cClipboardAction, .T. )
+               nWRow++
+               nWCol := Len( aText[ nAddRow + nWRow + 1 ] )
+            ELSE
+               hb_AIns( aText, nAddRow + nWRow + 2, cClipboardAction, .T. )
+               nWRow++
+               nWCol := 0
+            ENDIF
+
             EXIT
+
          CASE K_CTRL_X
+
+            cClipboardAction := aText[ nAddRow + nWRow + 1 ]
+            hb_ADel( aText, nAddRow + nWRow + 1, .T. )
+            nWCol := 0
+
             EXIT
+
          ENDSWITCH
          LOOP
       ENDIF
@@ -298,7 +321,7 @@ PROCEDURE Main( cFileName )
 
          EXIT
 
-      CASE K_ENTER
+         CASE K_ENTER
 
          IF aText[ nAddRow + nWRow + 1 ] == "" .AND. nWCol == 0
 
@@ -331,12 +354,12 @@ PROCEDURE Main( cFileName )
 
       CASE K_INS
 
-         IF lEditor_cursorStyle
+         IF lCursorStyle
             SetCursor( SC_NORMAL )
-            lEditor_cursorStyle := .F.
+            lCursorStyle := .F.
          ELSE
             SetCursor( SC_INSERT )
-            lEditor_cursorStyle := .T.
+            lCursorStyle := .T.
          ENDIF
 
          EXIT
@@ -396,14 +419,14 @@ PROCEDURE Main( cFileName )
 
       CASE K_TAB
          cString := aText[ nAddRow + nWRow + 1 ]
-         aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), "   " )
+         aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lCursorStyle, 1, 0 ), "   " )
 
          nWCol += 3
 
          EXIT
 
       CASE K_F1
-
+Alert( cClipboardAction )
          EXIT
 
       CASE K_SH_F10
@@ -420,13 +443,13 @@ PROCEDURE Main( cFileName )
 
             cString := aText[ nAddRow + nWRow + 1 ]
 
-            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lEditor_cursorStyle, 1, 0 ), AddChar( nKey ) )
+            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lCursorStyle, 1, 0 ), AddChar( nKey ) )
 
             nWCol++
 
          ENDIF
 
-         IF lFiles_autoSave
+         IF lAutoSave
             cString := ""
             AEval( aText, {| e | cString += e + hb_eol() } )
             hb_MemoWrit( cFileName, cString )
