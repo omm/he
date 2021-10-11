@@ -3,8 +3,7 @@ layout: default
 title: Shortcuts
 ---
 
-> ## Keyboard shortcuts
----
+## Keyboard shortcuts
 
 #### General
 
