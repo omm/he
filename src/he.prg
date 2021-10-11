@@ -25,6 +25,7 @@ PROCEDURE Main( cFileName )
 
    LOCAL i
    LOCAL nChoice
+   LOCAL nClipboardAction := 0
    LOCAL nKey
    LOCAL nLeft
    LOCAL nLine
@@ -32,12 +33,12 @@ PROCEDURE Main( cFileName )
    LOCAL nMaxRow := 0
    LOCAL nVLine := 1                                /* vertical line */
 
-   LOCAL cClipboardAction
+   LOCAL cClipboardAction := ""
    LOCAL cString
    LOCAL cSubString
 
-   LOCAL lApp_continue := .T.
-   LOCAL lAutoSave := .F.
+   LOCAL lApp_Continue := .T.
+   LOCAL lAutoSave := .T.
    LOCAL lCursorStyle := .F.
    LOCAL lLineNumbers := .T.
    LOCAL lRenderLineHighlight := .T.
@@ -93,7 +94,7 @@ PROCEDURE Main( cFileName )
 
    hb_gtInfo( HB_GTI_WINTITLE, cFileName )
 
-   DO WHILE lApp_continue
+   DO WHILE lApp_Continue
 
       IF nMaxRow != MaxRow() .OR. nMaxCol != MaxCol()
          nMaxRow := MaxRow()
@@ -122,10 +123,10 @@ PROCEDURE Main( cFileName )
 
             hb_DispOutAt( i, nLeft, "▕", "08/00" ) /* (U+2595) */
 
-            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), if( lRenderLineHighlight, iif( i == nWRow, "00/15", "07/00" ), NIL ) )
+            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), SyntaxColoring( nLine, nClipboardAction, lRenderLineHighlight, i, nWRow ) )
          ELSE
             Scroll( i, 0, nMaxRow, nMaxCol )
-            hb_DispOutAt( i, 0, ">> EOF <<", 0x01 )
+            hb_DispOutAt( i, 0, ">> EOF <<", "01/00" )
             EXIT
          ENDIF
 
@@ -140,6 +141,7 @@ PROCEDURE Main( cFileName )
 
       /* Key Shift */
       IF hb_gtInfo( HB_GTI_KBDSHIFTS ) == hb_bitOr( hb_gtInfo( HB_GTI_KBDSHIFTS ), HB_GTI_KBD_SHIFT )
+
          SWITCH nKey
          CASE K_UP
             EXIT
@@ -157,6 +159,25 @@ PROCEDURE Main( cFileName )
             EXIT
          CASE K_PGDN
             EXIT
+
+         OTHERWISE
+
+            IF ( nKey >= 32 .AND. nKey <= 126 ) .OR. ( nKey >= 160 .AND. nKey <= 255 ) .OR. ! hb_keyChar( nKey ) == ""
+
+               cString := aText[ nAddRow + nWRow + 1 ]
+
+               aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lCursorStyle, 1, 0 ), AddCharTwin( nKey ) )
+
+               nWCol++
+
+            ENDIF
+
+            IF lAutoSave
+               cString := ""
+               AEval( aText, {| e | cString += e + hb_eol() } )
+               hb_MemoWrit( cFileName, cString )
+            ENDIF
+
          ENDSWITCH
          LOOP
       ENDIF
@@ -167,7 +188,7 @@ PROCEDURE Main( cFileName )
          CASE K_CTRL_C
 
             cClipboardAction := aText[ nAddRow + nWRow + 1 ]
-
+            nClipboardAction := nAddRow + nWRow + 1
             EXIT
 
          CASE K_CTRL_V
@@ -181,6 +202,8 @@ PROCEDURE Main( cFileName )
                nWRow++
                nWCol := 0
             ENDIF
+
+            nClipboardAction := 0
 
             EXIT
 
@@ -326,7 +349,6 @@ PROCEDURE Main( cFileName )
          IF aText[ nAddRow + nWRow + 1 ] == "" .AND. nWCol == 0
 
             hb_AIns( aText, nAddRow + nWRow + 1, "", .T. )
-
             SetPosRow( aText, nMaxRow )
 
          ELSE
@@ -335,6 +357,7 @@ PROCEDURE Main( cFileName )
                nWRow++
                nWCol := 0
             ELSE
+               /* Return a substring beginning with the rightmost character */
                cSubString := Right( aText[ nAddRow + nWRow + 1 ], Len( aText[ nAddRow + nWRow + 1 ] ) - nWCol )
 
                cString := aText[ nAddRow + nWRow + 1 ]
@@ -399,7 +422,6 @@ PROCEDURE Main( cFileName )
                aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol, 1, "" )
                nWCol--
             ELSE
-
                IF nWRow > 0
                   IF aText[ nAddRow + nWRow + 1 - 1 ] == ""
                      nWCol := 0
@@ -426,7 +448,7 @@ PROCEDURE Main( cFileName )
          EXIT
 
       CASE K_F1
-Alert( cClipboardAction )
+
          EXIT
 
       CASE K_SH_F10
@@ -443,7 +465,7 @@ Alert( cClipboardAction )
 
             cString := aText[ nAddRow + nWRow + 1 ]
 
-            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lCursorStyle, 1, 0 ), AddChar( nKey ) )
+            aText[ nAddRow + nWRow + 1 ] := Stuff( cString, nWCol + 1, iif( lCursorStyle, 1, 0 ), AddCharTwin( nKey ) )
 
             nWCol++
 
@@ -485,33 +507,56 @@ STATIC PROCEDURE SetPosCol( aText )
 
    RETURN
 
-STATIC FUNCTION AddChar( nKey )
+STATIC FUNCTION AddCharTwin( nKey )
+
+   LOCAL cChar
 
    SWITCH nKey
-   CASE 34 // "
-      nKey := hb_keyChar( nKey ) + hb_keyChar( 34 )
+   CASE 34 // ""
+      cChar := hb_keyChar( nKey ) + hb_keyChar( 34 )
       EXIT
 
-   CASE 39 // '
-      nKey := hb_keyChar( nKey ) + hb_keyChar( 39 )
+   CASE 39 // ''
+      cChar := hb_keyChar( nKey ) + hb_keyChar( 39 )
       EXIT
 
-   CASE 40 // (
-      nKey := hb_keyChar( nKey ) + hb_keyChar( 41 )
+   CASE 40 // ()
+      cChar := hb_keyChar( nKey ) + hb_keyChar( 41 )
       EXIT
 
-   CASE 91 // [
-      nKey := hb_keyChar( nKey ) + hb_keyChar( 93 )
+   CASE 91 // []
+      cChar := hb_keyChar( nKey ) + hb_keyChar( 93 )
       EXIT
 
-   CASE 123 // {
-      nKey := hb_keyChar( nKey ) + hb_keyChar( 125 )
+   CASE 123 // {}
+      cChar := hb_keyChar( nKey ) + hb_keyChar( 125 )
       EXIT
 
    OTHERWISE
 
-      nKey := hb_keyChar( nKey )
+      cChar := hb_keyChar( nKey )
 
    ENDSWITCH
 
-   RETURN nKey
+   RETURN cChar
+
+STATIC FUNCTION SyntaxColoring( nLine, nClipboardAction, lRenderLineHighlight, i, nWRow )
+
+   LOCAL cColor
+
+   IF nLine == nClipboardAction
+      cColor := "04/00"
+   ELSE
+      IF lRenderLineHighlight
+         IF i == nWRow
+            cColor := "15/08"
+         ELSE
+            cColor := "07/00"
+         ENDIF
+      ELSE
+         cColor := NIL
+      ENDIF
+   ENDIF
+
+   RETURN cColor
+
