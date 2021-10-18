@@ -3,7 +3,7 @@
 -obin/${hb_plat}/${hb_comp}/${hb_name}
 
 -w3 -es2
--icon=docs/assets/img/harbour.icns
+-icon=docs/assets/img/harbour.ico
 
 src/he.prg
 

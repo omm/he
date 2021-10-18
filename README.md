@@ -5,6 +5,8 @@ This general purpose text editor aims at simplicity and ease of use. The major p
 lightweight nature that makes sure that you can use it with ease on hardware with limited resources.
 The project has an educational nature - the main goal is to expand knowledge in the field of creating the aplications with the usege of Harbour programing language.
 
+The project is more compatible with Linux and derivatives.
+
 #### Install
 
 Clone an existing repository only fetching the 10 most recent commits on the default branch (useful to save time):
@@ -42,7 +44,7 @@ source ~/.bashrc
 #### Windows
 
 ```
-setx path "%path%;c:he/bin/win/mingw64"
+setx path "%path%;c:he\bin\win\mingw64"
 ```
 
 #### Hello World

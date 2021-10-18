@@ -59,7 +59,7 @@ PROCEDURE Main( cFileName )
    Set( _SET_OSCODEPAGE, hb_cdpOS() )
 
    hb_gtInfo( HB_GTI_RESIZEMODE, HB_GTI_RESIZEMODE_ROWS )
-   hb_gtInfo( HB_GTI_ICONFILE, "docs/assets/img/harbour.icns" )
+   hb_gtInfo( HB_GTI_ICONFILE, "docs/assets/img/harbour.ico" )
 
    IF cFileName == NIL
       cFileName := "Untitled-1.prg"
