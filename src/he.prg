@@ -25,7 +25,6 @@ PROCEDURE Main( cFileName )
 
    LOCAL i
    LOCAL nChoice
-   LOCAL nClipboardAction := 0
    LOCAL nKey
    LOCAL nLeft
    LOCAL nLine
@@ -41,7 +40,6 @@ PROCEDURE Main( cFileName )
    LOCAL lAutoSave := .T.
    LOCAL lCursorStyle := .F.
    LOCAL lLineNumbers := .T.
-   LOCAL lRenderLineHighlight := .T.
 
    Scroll()
 
@@ -121,9 +119,9 @@ PROCEDURE Main( cFileName )
                hb_DispOutAt(  i, 0, PadL( hb_ntos( nLine ), nLeft ), iif( i == nWRow, "15/00", "07/00" ) )
             ENDIF
 
-            hb_DispOutAt( i, nLeft, "▕", "08/00" ) /* (U+2595) */
+            hb_DispOutAt( i, nLeft, "│", "08/00" )
 
-            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), SyntaxColoring( nLine, nClipboardAction, lRenderLineHighlight, i, nWRow ) )
+            hb_DispOutAt( i, nLeft + nVLine, PadR( aText[ nLine ], nMaxCol + 1 ), SyntaxColoring( i, nWRow ) )
          ELSE
             Scroll( i, 0, nMaxRow, nMaxCol )
             hb_DispOutAt( i, 0, ">> EOF <<", "01/00" )
@@ -188,7 +186,6 @@ PROCEDURE Main( cFileName )
          CASE K_CTRL_C
 
             cClipboardAction := aText[ nAddRow + nWRow + 1 ]
-            nClipboardAction := nAddRow + nWRow + 1
             EXIT
 
          CASE K_CTRL_V
@@ -202,8 +199,6 @@ PROCEDURE Main( cFileName )
                nWRow++
                nWCol := 0
             ENDIF
-
-            nClipboardAction := 0
 
             EXIT
 
@@ -540,23 +535,15 @@ STATIC FUNCTION AddCharTwin( nKey )
 
    RETURN cChar
 
-STATIC FUNCTION SyntaxColoring( nLine, nClipboardAction, lRenderLineHighlight, i, nWRow )
+STATIC FUNCTION SyntaxColoring( i, nWRow )
 
    LOCAL cColor
 
-   IF nLine == nClipboardAction
-      cColor := "04/00"
+   IF i == nWRow
+      cColor := "15/08"
    ELSE
-      IF lRenderLineHighlight
-         IF i == nWRow
-            cColor := "15/08"
-         ELSE
-            cColor := "07/00"
-         ENDIF
-      ELSE
-         cColor := NIL
-      ENDIF
+      cColor := "07/00"
    ENDIF
 
-   RETURN cColor
+RETURN cColor
 
